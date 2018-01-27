@@ -1,2 +1,2 @@
-# House-price-prediction
+# House price prediction
 KNN regression in R
