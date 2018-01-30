@@ -4,6 +4,7 @@
 _Machine Learning/Data Mining (Regression Technique)_
 + _Applied Model: KNN Regression_
 + _Language: R_
++ _Variable Standardization, Variable Transformation, Model Selection, MSE_
 
 
 ***
