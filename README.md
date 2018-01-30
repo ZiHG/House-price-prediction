@@ -14,6 +14,7 @@ _Machine Learning/Data Mining (Regression Technique)_
 The data is about the sale price of houses in a Midwestern city in the U.S. and it came from home sales during the period 2006 to 2010. 
 
 The data files are as follows:
+
  + The data dictionary for the dataset: DataDocumentation.txt:
  + The entire data set:
      - AllData.csv:
