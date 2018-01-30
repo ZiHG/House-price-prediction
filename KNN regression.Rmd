@@ -1,0 +1,257 @@
+---
+title: "KNN Regression"
+output: html_notebook
+---
+First, some codes about how to split the data into training, validation and test.
+1.Create a data frame
+```{r}
+data <- read.table("GradedHW1-All-Data.csv", header = T, sep = ",")
+```
+2.Remove all observations except those that are single family homes.
+```{r}
+data <- data[data$Bldg.Type == "1Fam",]
+```
+3.Split the data frame into training, validation, and test data sets.
+```{r}
+train_size <- ceiling(0.5*nrow(data))
+set.seed(12)
+train_data <- sample(nrow(data), size = train_size)
+
+last <- data[-train_data,]
+vali_size <- ceiling(0.5*nrow(last))
+set.seed(12)
+vali_data <- sample(nrow(last), size = vali_size)
+
+train <- data[train_data,]
+vali <- last[vali_data,]
+test <- last[-vali_data,]
+```
+
+
+1.Import data
+```{r}
+data_train <- read.table("TrainData.csv", sep = ",", header = T)
+data_test <- read.table("TestData.csv", sep = ",", header = T)
+data_vali <- read.table("ValidationData.csv", sep = ",", header = T)
+
+data_train[c(1:4,6:19,21:38,40:46,48:49,51,53:78)] <- list(NULL)
+data_vali[c(1:4,6:19,21:38,40:46,48:49,51,53:78)] <- list(NULL)
+data_test[c(1:4,6:19,21:38,40:46,48:49,51,53:78)] <- list(NULL)
+
+data_train$Age <- 2017- data_train$Year.Built
+data_vali$Age <- 2017- data_vali$Year.Built
+data_test$Age <- 2017- data_test$Year.Built
+
+data_train$Year.Built <- NULL
+data_vali$Year.Built <- NULL
+data_test$Year.Built <- NULL
+```
+2.Examine the variables
+```{r}
+head(data_train)
+str(data_train)
+summary(data_train)
+```
+
+
+Compare KNN regression with standardizing variables and without standardizing variables
+
+1.knn-regression with standardizing variables
+a)Standardize the variables
+```{r}
+train <- data_train[complete.cases(data_train),]
+test <- data_test[complete.cases(data_test),]
+vali <- data_vali[complete.cases(data_vali),]
+
+standardize <- function(x) {
+  return( ( x - min(x) ) / ( max(x) - min(x) ) )
+}
+
+Tr <- as.data.frame(lapply(train[,c(1,2,3,4,5,7)], standardize))
+Te <- as.data.frame(lapply(test[,c(1,2,3,4,5,7)], standardize))
+Va <- as.data.frame(lapply(vali[,c(1,2,3,4,5,7)], standardize))
+
+summary(Tr)
+```
+b)Find the best K through validation data
+```{r}
+m1 <- knn.reg(train=Tr, y=SalePrice, test= Va, k=1)
+y_p <- m1$pred
+MSE <- mean((y_p- vali$SalePrice)^2)
+
+kbest <- 0
+klist <- seq(nrow(Va))
+for (k in klist) {
+  m1 <- knn.reg(train=Tr, y=SalePrice, test= Va, k)
+  y_p <- m1$pred
+  mse.test <- mean((y_p- vali$SalePrice)^2)
+  if (mse.test < MSE) {
+    MSE <- mse.test
+    kbest <- k
+  } 
+}
+```
+c)Model's generalization performance
+```{r}
+m2 <- knn.reg(train=Tr, y=SalePrice, test= Te, k=kbest)
+y_pred <- m2$pred
+MSE.test <- mean((y_pred- test$SalePrice)^2)
+sqrt(MSE.test)
+```
+
+
+2.knn-regression without standardizing variables
+
+```{r}
+Tr <- train[,c(1,2,3,4,5,7)]
+Te <- test[,c(1,2,3,4,5,7)]
+Va <- vali[,c(1,2,3,4,5,7)]
+
+summary(Tr)
+
+m1 <- knn.reg(train=Tr, y=SalePrice, test= Va, k=1)
+y_p <- m1$pred
+MSE <- mean((y_p- vali$SalePrice)^2)
+
+kbest <- 0
+klist <- seq(nrow(Va))
+for (k in klist) {
+  m1 <- knn.reg(train=Tr, y=SalePrice, test= Va, k)
+  y_p <- m1$pred
+  mse.test <- mean((y_p- vali$SalePrice)^2)
+  if (mse.test < MSE) {
+    MSE <- mse.test
+    kbest <- k
+  } 
+}
+
+m2 <- knn.reg(train=Tr, y=SalePrice, test= Te, k=kbest)
+y_pred <- m2$pred
+MSE.test <- mean((y_pred- test$SalePrice)^2)
+sqrt(MSE.test)
+
+```
+
+
+Build KNN regression Model:
+
+1.Import the data 
+```{r}
+data_train <- read.table("GradedHW1-Train-Data.csv", sep = ",", header = T)
+data_test <- read.table("GradedHW1-Test-Data.csv", sep = ",", header = T)
+data_vali <- read.table("GradedHW1-Validation-Data.csv", sep = ",", header = T)
+
+data_train[c(1:4,6:19,21:38,40:46,48:49,51,53:78)] <- list(NULL)
+data_vali[c(1:4,6:19,21:38,40:46,48:49,51,53:78)] <- list(NULL)
+data_test[c(1:4,6:19,21:38,40:46,48:49,51,53:78)] <- list(NULL)
+
+data_train$Age <- 2017- data_train$Year.Built
+data_vali$Age <- 2017- data_vali$Year.Built
+data_test$Age <- 2017- data_test$Year.Built
+
+data_train$Year.Built <- NULL
+data_vali$Year.Built <- NULL
+data_test$Year.Built <- NULL
+
+train <- data_train[complete.cases(data_train),]
+test <- data_test[complete.cases(data_test),]
+vali <- data_vali[complete.cases(data_vali),]
+
+```
+
+
+2.Transform variables
+```{r}
+plot(train)
+```
+a)Not indepedent
+```{r}
+plot(train$Total.Bsmt.SF, train$Gr.Liv.Area)
+cor(train$Total.Bsmt.SF, train$Gr.Liv.Area)
+
+train$sTotal <- sqrt(train$Gr.Liv.Area+train$Total.Bsmt.SF)
+plot(train$sTotal, train$SalePrice)
+cor(train$sTotal, train$SalePrice)#0.78
+test$sTotal <- sqrt(test$Gr.Liv.Area+test$Total.Bsmt.SF)
+vali$sTotal <- sqrt(vali$Gr.Liv.Area+vali$Total.Bsmt.SF)
+```
+b)Non-linear relationship
+```{r}
+train$logage <- log(train$Age)
+cor(train$logage, train$SalePrice)
+test$logage <- log(test$Age)
+vali$logage <- log(vali$Age)
+```
+c)Heteroscedasticity
+```{r}
+train$loglot <- log(train$Lot.Area)
+test$loglot <- log(test$Lot.Area)
+vali$loglot <- log(vali$Lot.Area)
+
+train$lot1 <- train$loglot*train$Full.Bath 
+cor(train$lot1, train$SalePrice) #0.62
+plot(train$lot1, train$SalePrice)
+test$lot1 <- test$loglot*test$Full.Bath
+vali$lot1 <- vali$loglot*vali$Full.Bath
+
+train$lot2 <- train$loglot*train$sTotal
+cor(train$lot2, train$SalePrice) #0.77
+test$lot2 <- test$loglot*test$sTotal
+vali$lot2 <- vali$loglot*vali$sTotal
+```
+d)Counts
+```{r}
+train$bed2 <- train$Bedroom.AbvGr^2
+cor(train$Bedroom.AbvGr, train$SalePrice)
+cor(train$bed2, train$SalePrice)
+test$bed2 <- test$Bedroom.AbvGr^2
+vali$bed2 <- vali$Bedroom.AbvGr^2
+
+train$bath2 <- train$Full.Bath^2
+cor(train$bath2, train$SalePrice)
+cor(train$Full.Bath, train$SalePrice)
+test$bath2 <- test$Full.Bath^2
+vali$bath2 <- vali$Full.Bath^2
+```
+
+
+3.Build the knn model without standardizing variables
+```{r}
+Tr <- train[,c(8,9,11,13)]
+Te <- test[,c(8,9,11,13)]
+Va <- vali[,c(8,9,11,13)]
+
+summary(Tr)
+```
+a)choose the best K
+```{r}
+m1 <- knn.reg(train=Tr, y=train$SalePrice, test= Va, k=1)
+y_p <- m1$pred
+MSE <- mean((y_p- vali$SalePrice)^2)
+kbest <- 0
+klist <- seq(nrow(Va))
+for (k in klist) {
+  m1 <- knn.reg(train=Tr, y=train$SalePrice, test= Va, k)
+  y_p <- m1$pred
+  mse.test <- mean((y_p- vali$SalePrice)^2)
+  if (mse.test < MSE) {
+    MSE <- mse.test
+    kbest <- k
+  } 
+}
+```
+b)Final MSE
+```{r}
+m2 <- knn.reg(train=Tr, y=SalePrice, test= Te, k=kbest)
+y_pred <- m2$pred
+MSE.test <- mean((y_pred- test$SalePrice)^2)
+sqrt(MSE.test)
+```
+
+
+
+
+
+
+
+
